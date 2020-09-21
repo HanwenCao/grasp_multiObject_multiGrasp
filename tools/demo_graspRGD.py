@@ -146,7 +146,8 @@ def demo(sess, net, image_name):
     #choice = cv2.waitKey(100)
     
     #save result
-    savepath = './data/demo/results_all_cls/' + str(image_name) + '.png'
+#     savepath = './data/demo/results_all_cls/' + str(image_name) + '.png'
+    savepath = './data/demo/results_all_cls/' + str(image_name)
     plt.savefig(savepath)
 
     plt.draw()
