@@ -42,7 +42,7 @@ CLASSES = ('__background__',
            'angle_01', 'angle_02', 'angle_03', 'angle_04', 'angle_05',
            'angle_06', 'angle_07', 'angle_08', 'angle_09', 'angle_10',
            'angle_11', 'angle_12', 'angle_13', 'angle_14', 'angle_15',
-           'angle_16', 'angle_17', 'angle_18', 'angle_19')
+           'angle_16', 'angle_17', 'angle_18', 'angle_19')  # true angle = -pi/2-pi/20*(angle-1)
 
 NETS = {'vgg16': ('vgg16_faster_rcnn_iter_70000.ckpt',),'res101': ('res101_faster_rcnn_iter_110000.ckpt',),'res50': ('res50_faster_rcnn_iter_240000.ckpt',)}
 DATASETS= {'pascal_voc': ('voc_2007_trainval',),'pascal_voc_0712': ('voc_2007_trainval+voc_2012_trainval',),'grasp': ('train',)}
@@ -53,16 +53,17 @@ def Rotate2D(pts,cnt,ang=scipy.pi/4):
 
 def vis_detections(ax, image_name, im, class_name, dets, thresh=0.5):
     """Draw detected bounding boxes."""
-    inds = np.where(dets[:, -1] >= thresh)[0]
+    #  one row of dets=[b1,b2,b3,b4,s1]
+    inds = np.where(dets[:, -1] >= thresh)[0]  #dets[:, -1]=score
     if len(inds) == 0:
         return
 
-    im = im[:, :, (2, 1, 0)]
+    im = im[:, :, (2, 1, 0)] #cv2_BGR -> RGB for vis
     #fig, ax = plt.subplots(figsize=(12, 12))
     ax.imshow(im, aspect='equal')
-    for i in inds:
-        bbox = dets[i, :4]
-        score = dets[i, -1]
+    for i in inds:  
+        bbox = dets[i, :4] # bbox=[b1,b2,b3,b4]
+        score = dets[i, -1] # score = s1
 
         #ax.add_patch(
         #    plt.Rectangle((bbox[0], bbox[1]),
@@ -72,8 +73,8 @@ def vis_detections(ax, image_name, im, class_name, dets, thresh=0.5):
         #    )
 
         # plot rotated rectangles
-        pts = ar([[bbox[0],bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])
-        cnt = ar([(bbox[0] + bbox[2])/2, (bbox[1] + bbox[3])/2])
+        pts = ar([[bbox[0],bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])  # 4 points on bbox
+        cnt = ar([(bbox[0] + bbox[2])/2, (bbox[1] + bbox[3])/2])  #center
         angle = int(class_name[6:])
         r_bbox = Rotate2D(pts, cnt, -pi/2-pi/20*(angle-1))
         pred_label_polygon = Polygon([(r_bbox[0,0],r_bbox[0,1]), (r_bbox[1,0], r_bbox[1,1]), (r_bbox[2,0], r_bbox[2,1]), (r_bbox[3,0], r_bbox[3,1])])
@@ -129,7 +130,7 @@ def demo(sess, net, image_name):
     CONF_THRESH = 0.1	
     NMS_THRESH = 0.3
     for cls_ind, cls in enumerate(CLASSES[1:]):  
-        # for each pre-defined angle, get all detections with the angle, apply NMS over the angle, vis
+        # for each pre-defined angle, get all detections with the angle, apply NMS over the detections, vis
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]  # one row of cls_boxes=[b1,b2,b3,b4]
         cls_scores = scores[:, cls_ind]  # one row of cls_score=[s1]
