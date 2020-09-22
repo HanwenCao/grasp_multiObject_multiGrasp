@@ -50,11 +50,11 @@ def _get_image_blob(im):
       im_scale = float(cfg.TEST.MAX_SIZE) / float(im_size_max)
     im = cv2.resize(im_orig, None, None, fx=im_scale, fy=im_scale,
             interpolation=cv2.INTER_LINEAR)
-    im_scale_factors.append(im_scale)
+    im_scale_factors.append(im_scale)  #(list): list of image scales (relative to im) used in the image pyramid
     processed_ims.append(im)
 
   # Create a blob to hold the input images
-  blob = im_list_to_blob(processed_ims)
+  blob = im_list_to_blob(processed_ims)  #(ndarray): a data blob holding an image pyramid
 
   return blob, np.array(im_scale_factors)
 
@@ -95,12 +95,13 @@ def im_detect(sess, net, im):
 
   _, scores, bbox_pred, rois = net.test_image(sess, blobs['data'], blobs['im_info'])
   
-  boxes = rois[:, 1:5] / im_scales[0]
+  boxes = rois[:, 1:5] / im_scales[0] # boxes：rpn层预测的区域
   # print(scores.shape, bbox_pred.shape, rois.shape, boxes.shape)
-  scores = np.reshape(scores, [scores.shape[0], -1])
-  bbox_pred = np.reshape(bbox_pred, [bbox_pred.shape[0], -1])
+  scores = np.reshape(scores, [scores.shape[0], -1]) # scores：回归层的softmax值
+  bbox_pred = np.reshape(bbox_pred, [bbox_pred.shape[0], -1]) # bbox_pred：回归层的boxes预测坐标
   if cfg.TEST.BBOX_REG:
     # Apply bounding-box regression deltas
+    # 从偏移量映射回真实坐标 [dx,dy,dw,dh]->[xmin,ymin,xmax,ymax]
     box_deltas = bbox_pred
     pred_boxes = bbox_transform_inv(boxes, box_deltas)
     pred_boxes = _clip_boxes(pred_boxes, im.shape)
