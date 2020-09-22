@@ -113,7 +113,7 @@ def demo(sess, net, image_name):
     # Detect all object classes and regress object bounds
     timer = Timer()
     timer.tic()
-    scores, boxes = im_detect(sess, net, im)
+    scores, boxes = im_detect(sess, net, im)  # boxes's row: multiple detections; every 4 cols: different angles
 
     #scores_max = scores[:,1:-1].max(axis=1)
     #scores_max_idx = np.argmax(scores_max)
@@ -128,14 +128,15 @@ def demo(sess, net, image_name):
     # Visualize detections for each class
     CONF_THRESH = 0.1	
     NMS_THRESH = 0.3
-    for cls_ind, cls in enumerate(CLASSES[1:]):
+    for cls_ind, cls in enumerate(CLASSES[1:]):  
+        # for each pre-defined angle, get all detections with the angle, apply NMS over the angle, vis
         cls_ind += 1 # because we skipped background
-        cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
-        cls_scores = scores[:, cls_ind]
+        cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]  # one row of cls_boxes=[b1,b2,b3,b4]
+        cls_scores = scores[:, cls_ind]  # one row of cls_score=[s1]
         dets = np.hstack((cls_boxes,
-                          cls_scores[:, np.newaxis])).astype(np.float32)
-        keep = nms(dets, NMS_THRESH)
-        dets = dets[keep, :]
+                          cls_scores[:, np.newaxis])).astype(np.float32)  # one row of dets=[b1,b2,b3,b4,s1]
+        keep = nms(dets, NMS_THRESH)  # NMS over rows
+        dets = dets[keep, :]  # after NMS
         vis_detections(ax, image_name, im, cls, dets, thresh=CONF_THRESH)
         #tmp = max(cls_scores)
 
